@@ -1,0 +1,7 @@
+*.idea
+*.git
+*/.idea
+*/out
+*/*.iml
+*/api/target
+/target
