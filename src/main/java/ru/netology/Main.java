@@ -1,14 +1,27 @@
 package ru.netology;
 
-import java.util.List;
+import java.io.BufferedOutputStream;
 
 public class Main {
+    public static final int PORT = 9999;
+
     public static void main(String[] args) {
-        final var port = 9999;
 
         Server server = new Server();
-        server.start(port);
-        //server.end();
+
+        // добавление хендлеров (обработчиков)
+        server.addHandler("GET", "/messages", new Handler() {
+            public void handle(Request request, BufferedOutputStream responseStream) {
+                // TODO: handlers code
+            }
+        });
+        server.addHandler("POST", "/messages", new Handler() {
+            public void handle(Request request, BufferedOutputStream responseStream) {
+                // TODO: handlers code
+            }
+        });
+
+        server.start(PORT);
     }
 }
 
