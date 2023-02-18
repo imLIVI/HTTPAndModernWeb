@@ -21,6 +21,10 @@ public class Server {
     private final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png",
             "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html",
             "/classic.html", "/events.html", "/events.js");
+    private final String BAD_REQUEST_CODE = "400";
+    private final String BAD_REQUEST_DESCRIPTION = "Bad Request";
+    private final String NOT_FOUND_CODE = "404";
+    private final String NOT_FOUND_DESCRIPTION = "Not Found";
 
     private final ConcurrentHashMap<String, Map<String, Handler>> handlers;
 
@@ -61,16 +65,13 @@ public class Server {
             final var path = parts[1];
             if (!method.equals(null)) {
                 Request request = new Request(method, path);
+            } else {
+                responseBuilder(out, BAD_REQUEST_CODE, BAD_REQUEST_DESCRIPTION);
+                return;
             }
 
             if (!validPaths.contains(path)) {
-                out.write((
-                        "HTTP/1.1 404 Not Found\r\n" +
-                                "Content-Length: 0\r\n" +
-                                "Connection: close\r\n" +
-                                "\r\n"
-                ).getBytes());
-                out.flush();
+                responseBuilder(out, NOT_FOUND_CODE, NOT_FOUND_DESCRIPTION);
                 return;
             }
 
@@ -111,9 +112,26 @@ public class Server {
         }
     }
 
+    public void responseBuilder(BufferedOutputStream out,
+                                   String respCode,
+                                   String respDescription) {
+        try {
+            out.write((
+                    "HTTP/1.1 " + respCode + " " + respDescription + "\r\n" +
+                            "Content-Type: none\r\n" +
+                            "Content-Length: 0\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
+            ).getBytes());
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void addHandler(String method, String path, Handler handler) {
         if (!handlers.containsKey(method)) {
-           handlers.put(method, new HashMap<>());
+            handlers.put(method, new HashMap<>());
         }
         handlers.get(method).put(path, handler);
     }
