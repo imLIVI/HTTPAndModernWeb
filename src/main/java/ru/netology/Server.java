@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,6 +112,9 @@ public class Server {
     }
 
     public void addHandler(String method, String path, Handler handler) {
-
+        if (!handlers.containsKey(method)) {
+           handlers.put(method, new HashMap<>());
+        }
+        handlers.get(method).put(path, handler);
     }
 }
