@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 
 public class Main {
     public static final int PORT = 9999;
-    private static final String NOT_FOUND_CODE = "404";
-    private static final String NOT_FOUND_DESCRIPTION = "Not Found";
 
     public static void main(String[] args) {
 
@@ -19,13 +17,13 @@ public class Main {
         server.addHandler("GET", "/messages", new Handler() {
             public void handle(Request request, BufferedOutputStream responseStream) {
                 // TODO: handlers code
-                server.responseBuilder(responseStream, NOT_FOUND_CODE, NOT_FOUND_DESCRIPTION, "", 0);
+                server.badRequest(responseStream);
             }
         });
         server.addHandler("POST", "/messages", new Handler() {
             public void handle(Request request, BufferedOutputStream responseStream) {
                 // TODO: handlers code
-                server.responseBuilder(responseStream, NOT_FOUND_CODE, NOT_FOUND_DESCRIPTION, "", 0);
+                server.badRequest(responseStream);
             }
         });
         server.addHandler("GET", "/index.html", new Handler() {
