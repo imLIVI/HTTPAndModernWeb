@@ -18,13 +18,8 @@ import java.util.concurrent.Executors;
 
 public class Server {
     private final ExecutorService executorService;
-    private final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png",
-            "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html",
-            "/classic.html", "/events.html", "/events.js");
     private final String BAD_REQUEST_CODE = "400";
     private final String BAD_REQUEST_DESCRIPTION = "Bad Request";
-    private final String NOT_FOUND_CODE = "404";
-    private final String NOT_FOUND_DESCRIPTION = "Not Found";
 
     private final ConcurrentHashMap<String, Map<String, Handler>> handlers;
 
@@ -34,8 +29,7 @@ public class Server {
     }
 
     public void start(int port) {
-        try {
-            final var serverSocket = new ServerSocket(port);
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
                 final var socket = serverSocket.accept();
                 executorService.submit(() -> handle(socket));
@@ -50,80 +44,43 @@ public class Server {
                 final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 final var out = new BufferedOutputStream(socket.getOutputStream())
         ) {
-            // read only request line for simplicity
-            // must be in form GET /path HTTP/1.1
-            final var requestLine = in.readLine();
-            final var parts = requestLine.split(" ");
-
-            if (parts.length != 3) {
-                // just close socket
-                socket.close();
+            Request request = Request.parse(in);
+            if (request == null ) {
+                responseBuilder(out, BAD_REQUEST_CODE, BAD_REQUEST_DESCRIPTION, null, 0);
                 return;
             }
 
-            final var method = parts[0];
-            final var path = parts[1];
-            if (!method.equals(null)) {
-                Request request = new Request(method, path);
-            } else {
-                responseBuilder(out, BAD_REQUEST_CODE, BAD_REQUEST_DESCRIPTION);
+            if (!handlers.containsKey(request.getMethod())) {
+                responseBuilder(out, BAD_REQUEST_CODE, BAD_REQUEST_DESCRIPTION, null, 0);
                 return;
             }
 
-            if (!validPaths.contains(path)) {
-                responseBuilder(out, NOT_FOUND_CODE, NOT_FOUND_DESCRIPTION);
+            var methods = handlers.get(request.getMethod());
+            if (!methods.containsKey(request.getPath())) {
+                responseBuilder(out, BAD_REQUEST_CODE, BAD_REQUEST_DESCRIPTION, null, 0);
                 return;
             }
 
-            final var filePath = Path.of(".", "public", path);
-            final var mimeType = Files.probeContentType(filePath);
-
-            // special case for classic
-            if (path.equals("/classic.html")) {
-                final var template = Files.readString(filePath);
-                final var content = template.replace(
-                        "{time}",
-                        LocalDateTime.now().toString()
-                ).getBytes();
-                out.write((
-                        "HTTP/1.1 200 OK\r\n" +
-                                "Content-Type: " + mimeType + "\r\n" +
-                                "Content-Length: " + content.length + "\r\n" +
-                                "Connection: close\r\n" +
-                                "\r\n"
-                ).getBytes());
-                out.write(content);
-                out.flush();
-                return;
-            }
-
-            final var length = Files.size(filePath);
-            out.write((
-                    "HTTP/1.1 200 OK\r\n" +
-                            "Content-Type: " + mimeType + "\r\n" +
-                            "Content-Length: " + length + "\r\n" +
-                            "Connection: close\r\n" +
-                            "\r\n"
-            ).getBytes());
-            Files.copy(filePath, out);
-            out.flush();
+            var handler = methods.get(request.getPath());
+            handler.handle(request, out);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void responseBuilder(BufferedOutputStream out,
-                                   String respCode,
-                                   String respDescription) {
+                                String respCode,
+                                String respDescription,
+                                String contentType,
+                                long contentLength) {
         try {
             out.write((
                     "HTTP/1.1 " + respCode + " " + respDescription + "\r\n" +
-                            "Content-Type: none\r\n" +
-                            "Content-Length: 0\r\n" +
+                            "Content-Type: " + contentType + "\r\n" +
+                            "Content-Length: " + contentLength + "\r\n" +
                             "Connection: close\r\n" +
                             "\r\n"
             ).getBytes());
-            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
