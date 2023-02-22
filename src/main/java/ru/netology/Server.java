@@ -66,16 +66,14 @@ public class Server {
 
             String body = getBody(method, headers, in);
             Request request = new Request(method, path, headers, body);
+            request.getQueryParams();
 
-
-            /*Request request = Request.parse(in);
-            if (request == null) {
-                badRequest(out);
-                return;
-            }*/
+            // проверка парсинга
+            List<String> params = request.getQueryParam("пока");
+            System.out.println(params.toString());
 
             if (!handlers.containsKey(request.getMethod())) {
-                badRequest(out);
+                notFound(out);
                 return;
             }
 
@@ -103,7 +101,6 @@ public class Server {
                 if (contentLength.isPresent()) {
                     final var length = Integer.parseInt(contentLength.get());
                     final var bodyBytes = in.readNBytes(length);
-
                     body = new String(bodyBytes);
                 }
             } catch (IOException e) {
@@ -180,6 +177,20 @@ public class Server {
         try {
             out.write((
                     "HTTP/1.1 400 Bad Request\r\n" +
+                            "Content-Length: 0\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
+            ).getBytes());
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void notFound(BufferedOutputStream out) {
+        try {
+            out.write((
+                    "HTTP/1.1 404 Not Found\r\n" +
                             "Content-Length: 0\r\n" +
                             "Connection: close\r\n" +
                             "\r\n"

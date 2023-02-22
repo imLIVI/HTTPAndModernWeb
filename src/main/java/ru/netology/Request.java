@@ -1,17 +1,19 @@
 package ru.netology;
 
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Request {
-    private static String method;
+    private String method;
     private String path;
     private List<String> headers;
     private String body;
+    private List<NameValuePair> queryParameters;
 
     // for POST request
     public Request(String method, String path, List<String> headers, String body) {
@@ -36,11 +38,22 @@ public class Request {
         return path;
     }
 
-    public void getQueryParam(String name) {
-
+    public void getQueryParams() {
+        try {
+            URI uri = new URI(path);
+            queryParameters = URLEncodedUtils.parse(uri, "UTF-8");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void getQueryParams() {
-
+    public List<String> getQueryParam(String name) {
+        if (!queryParameters.isEmpty())
+            return queryParameters.stream()
+                    .filter(o -> o.getName().startsWith(name))
+                    .map(NameValuePair::getValue)
+                    .collect(Collectors.toList());
+        else
+            return null;
     }
 }
