@@ -1,16 +1,31 @@
 package ru.netology;
 
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 public class Request {
     private static String method;
     private String path;
+    private List<String> headers;
     private String body;
 
-    public Request(String method, String path) {
+    // for POST request
+    public Request(String method, String path, List<String> headers, String body) {
         this.method = method;
         this.path = path;
+        this.headers = headers;
+        this.body = body;
+    }
+
+    // for GET request
+    public Request(String method, String path, List<String> headers) {
+        this.method = method;
+        this.path = path;
+        this.headers = headers;
     }
 
     public String getMethod() {
@@ -21,23 +36,11 @@ public class Request {
         return path;
     }
 
-    public static Request parse(BufferedReader in) {
-        // read only request line for simplicity
-        // must be in form GET /path HTTP/1.1
-        String requestLine;
-        String method = null, path = null;
-        try {
-            requestLine = in.readLine();
-            var parts = requestLine.split(" ");
-            if (parts.length != 3)
-                return null;
-            method = parts[0];
-            path = parts[1];
+    public void getQueryParam(String name) {
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new Request(method, path);
     }
 
+    public void getQueryParams() {
+
+    }
 }
